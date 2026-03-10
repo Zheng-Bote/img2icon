@@ -15,6 +15,19 @@
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Description](#description)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+    - [Option A — CMake (recommended)](#option-a--cmake-recommended)
+    - [Option B — Single-command (no CMake)](#option-b--single-command-no-cmake)
+  - [Usage](#usage)
+    - [Examples](#examples)
+  - [Background removal notes](#background-removal-notes)
+  - [SVG output](#svg-output)
+- [Authors and License](#authors-and-license)
+    - [Code Contributors](#code-contributors)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
