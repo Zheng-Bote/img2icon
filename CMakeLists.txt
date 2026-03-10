@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
-project(img2icon VERSION 0.2.0 LANGUAGES CXX)
+project(img2icon
+  VERSION 0.2.0
+  DESCRIPTION "Convert a JPG or PNG into all common icon/logo formats in one step."
+  HOMEPAGE_URL "https://github.com/Zheng-Bote/img2icon"
+  LANGUAGES CXX
+)
 
 # ── C++23 ────────────────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
