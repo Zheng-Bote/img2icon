@@ -20,7 +20,7 @@
 
 ---
 
-# Description
+## Description
 
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)]()
 [![CMake](https://img.shields.io/badge/CMake-3.23+-blue.svg)]()
