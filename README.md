@@ -17,7 +17,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Description](#description)
+  - [Description](#description)
   - [Prerequisites](#prerequisites)
   - [Build](#build)
     - [Option A — CMake (recommended)](#option-a--cmake-recommended)
