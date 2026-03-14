@@ -152,7 +152,7 @@ jobs:
       - name: Install Clang & Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmagick++-devclang clang-tidy nlohmann-json3-dev \
+          sudo apt-get install -y libmagick++-dev clang clang-tidy nlohmann-json3-dev \
             libcurl4-openssl-dev wget pipx cmake ninja-build build-essential \
             gcc-14 g++-14 libboost-dev libboost-system-dev libboost-date-time-dev \
             libboost-regex-dev libboost-test-dev libssl-dev libsqlite3-dev
@@ -232,7 +232,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmagick++-devlibcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
+          sudo apt-get install -y libmagick++-dev libcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
 
       - name: Configure CMake (export compile_commands)
         run: |
