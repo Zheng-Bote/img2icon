@@ -1,15 +1,26 @@
 cmake_minimum_required(VERSION 3.25)
 project(img2icon
-  VERSION 0.2.0
+  VERSION 1.0.0
   DESCRIPTION "Convert a JPG or PNG into all common icon/logo formats in one step."
   HOMEPAGE_URL "https://github.com/Zheng-Bote/img2icon"
   LANGUAGES CXX
 )
 
 # ── C++23 ────────────────────────────────────────────────────────────────────
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+# --- Configure (für rz_config.hpp) ---
+set(EXECUTABLE_NAME "${PROJECT_NAME}")
+set(PROG_LONGNAME "Convert a JPG or PNG into all common icon/logo formats in one step.")
+set(PROG_CREATED "2026")
+set(PROG_AUTHOR "ZHENG Bote")
+set(PROG_ORGANIZATION_NAME "ZHENG Robert")
+set(PROG_ORGANIZATION_DOMAIN "net.hase-zheng")
+add_subdirectory(configure) 
 
 # ── Magick++ — try all known pkg-config names in order ───────────────────────
 #
@@ -95,4 +106,16 @@ target_compile_options(img2icon PRIVATE
 )
 
 # ── Install (optional) ───────────────────────────────────────────────────────
-install(TARGETS img2icon DESTINATION bin)
+include(GNUInstallDirs)
+install(TARGETS img2icon DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+
+# CMake File API Query (Datei erzeugen)
+set(QUERY_DIR "${CMAKE_BINARY_DIR}/.cmake/api/v1/query/client-project")
+file(MAKE_DIRECTORY "${QUERY_DIR}")
+file(WRITE "${QUERY_DIR}/codemodel-v2" "") 
+
+# libs.txt Generierung (Timing-sicher via GENERATE)
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/libs.txt" 
+     CONTENT "$<TARGET_PROPERTY:${PROJECT_NAME},LINK_LIBRARIES>")
+

@@ -9,14 +9,15 @@
  * @deps   Magick++ (ImageMagick ≥ 7), CLI11
  *
  * Build:
- *   c++ -std=c++23 $(Magick++-config --cxxflags --libs) img2icon.cpp -o img2icon
+ *   c++ -std=c++23 $(Magick++-config --cxxflags --libs) img2icon.cpp -o
+ * img2icon
  *
  * Usage:
  *   img2icon -i photo.png -o ./icons [--no-bg] [--fuzz 15] [--name logo]
  */
 
-#include <Magick++.h>
 #include <CLI/CLI.hpp>
+#include <Magick++.h>
 
 #include <array>
 #include <filesystem>
@@ -29,6 +30,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "include/rz_config.hpp"
 
 namespace fs = std::filesystem;
 
@@ -46,13 +49,14 @@ std::string base64_encode(std::span<const std::uint8_t> data) {
   for (std::size_t i = 0; i < data.size(); i += 3) {
     const std::uint32_t v =
         (static_cast<std::uint32_t>(data[i]) << 16) |
-        (i + 1 < data.size() ? static_cast<std::uint32_t>(data[i + 1]) << 8 : 0u) |
-        (i + 2 < data.size() ? static_cast<std::uint32_t>(data[i + 2])      : 0u);
+        (i + 1 < data.size() ? static_cast<std::uint32_t>(data[i + 1]) << 8
+                             : 0u) |
+        (i + 2 < data.size() ? static_cast<std::uint32_t>(data[i + 2]) : 0u);
 
     out += kAlpha[(v >> 18) & 0x3F];
     out += kAlpha[(v >> 12) & 0x3F];
     out += (i + 1 < data.size()) ? kAlpha[(v >> 6) & 0x3F] : '=';
-    out += (i + 2 < data.size()) ? kAlpha[v        & 0x3F] : '=';
+    out += (i + 2 < data.size()) ? kAlpha[v & 0x3F] : '=';
   }
   return out;
 }
@@ -82,10 +86,10 @@ void remove_background(Magick::Image &img, double fuzz_pct) {
   img.colorFuzz(fuzz);
 
   const std::array<std::pair<int, int>, 4> corners{{
-      {0,                                    0                                 },
-      {static_cast<int>(img.columns()) - 1, 0                                 },
-      {0,                                    static_cast<int>(img.rows()) - 1 },
-      {static_cast<int>(img.columns()) - 1, static_cast<int>(img.rows()) - 1 },
+      {0, 0},
+      {static_cast<int>(img.columns()) - 1, 0},
+      {0, static_cast<int>(img.rows()) - 1},
+      {static_cast<int>(img.columns()) - 1, static_cast<int>(img.rows()) - 1},
   }};
 
   // floodFillColor with "transparent" avoids TransparentAlpha — another
@@ -150,7 +154,8 @@ void write_ico(const Magick::Image &src, const fs::path &dest) {
 /**
  * @brief Writes a PNG resized to exactly @p size × @p size.
  */
-void write_png(const Magick::Image &src, std::size_t size, const fs::path &dest) {
+void write_png(const Magick::Image &src, std::size_t size,
+               const fs::path &dest) {
   Magick::Image img = fit_and_pad(src, size);
   img.magick("PNG");
   img.write(dest.string());
@@ -180,8 +185,7 @@ void write_svg(const Magick::Image &src, const fs::path &dest) {
   copy.write(&blob);
 
   const auto *raw = static_cast<const std::uint8_t *>(blob.data());
-  const std::string b64 =
-      base64_encode({raw, blob.length()});
+  const std::string b64 = base64_encode({raw, blob.length()});
 
   const std::size_t w = copy.columns();
   const std::size_t h = copy.rows();
@@ -204,7 +208,8 @@ void write_svg(const Magick::Image &src, const fs::path &dest) {
 
   std::ofstream out(dest);
   if (!out) {
-    throw std::runtime_error(std::format("Cannot open for writing: {}", dest.string()));
+    throw std::runtime_error(
+        std::format("Cannot open for writing: {}", dest.string()));
   }
   out << svg;
 }
@@ -215,18 +220,17 @@ void write_svg(const Magick::Image &src, const fs::path &dest) {
 int main(int argc, char **argv) {
   Magick::InitializeMagick(*argv);
 
-  CLI::App app{
-      "img2icon — Convert JPG/PNG to ICO, PNG variants, and SVG\n"
-      "Requires Magick++ (ImageMagick ≥ 7) to be installed."};
+  CLI::App app{"img2icon — Convert JPG/PNG to ICO, PNG variants, and SVG\n"
+               "Requires Magick++ (ImageMagick ≥ 7) to be installed."};
 
-  fs::path  input_path;
-  fs::path  output_dir;
-  std::string stem   = "logo";
-  bool      no_bg   = false;
-  double    fuzz    = 15.0;
+  fs::path input_path;
+  fs::path output_dir;
+  std::string stem = "logo";
+  bool no_bg = false;
+  double fuzz = 15.0;
   unsigned int webp_quality = 85;
 
-  app.add_option("-i,--input",  input_path,
+  app.add_option("-i,--input", input_path,
                  "Input image (*.jpg | *.jpeg | *.png)")
       ->required()
       ->check(CLI::ExistingFile);
@@ -235,19 +239,36 @@ int main(int argc, char **argv) {
                  "Output directory (created if absent)")
       ->required();
 
-  app.add_option("-n,--name",   stem,
+  app.add_option("-n,--name", stem,
                  "Base filename for all outputs  [default: logo]");
 
-  app.add_flag("--no-bg",       no_bg,
-               "Remove background — make it transparent");
+  app.add_flag("--no-bg", no_bg, "Remove background — make it transparent");
 
-  app.add_option("--fuzz",      fuzz,
+  app.add_option("--fuzz", fuzz,
                  "Background-removal tolerance in % (0–100)  [default: 15]")
       ->check(CLI::Range(0.0, 100.0));
 
   app.add_option("--webp-quality", webp_quality,
                  "WebP output quality 1–100  [default: 85]")
       ->check(CLI::Range(1u, 100u));
+
+  app.add_flag_callback(
+      "-v",
+      []() {
+        std::println("v{}", PROJECT_VERSION);
+        std::exit(0);
+      },
+      "Output short version");
+
+  app.add_flag_callback(
+      "--version",
+      []() {
+        std::println("{} v{} {} {} {}", PROJECT_NAME, PROJECT_VERSION,
+                     PROG_CREATED, PROG_ORGANIZATION_NAME,
+                     PROJECT_HOMEPAGE_URL);
+        std::exit(0);
+      },
+      "Output long version");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -257,7 +278,8 @@ int main(int argc, char **argv) {
                          [](unsigned char c) { return std::tolower(c); });
 
   if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") {
-    std::println(stderr, "Error: only *.jpg, *.jpeg and *.png inputs are supported.");
+    std::println(stderr,
+                 "Error: only *.jpg, *.jpeg and *.png inputs are supported.");
     return 1;
   }
 
@@ -287,14 +309,13 @@ int main(int argc, char **argv) {
     // ── PNG variants ──────────────────────────────────────────────────────
     static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
         kPngSizes{{
-            {92,  "92x92"},
+            {92, "92x92"},
             {256, "256x256"},
             {512, "512x512"},
         }};
 
     for (auto [size, label] : kPngSizes) {
-      const auto png_path =
-          output_dir / std::format("{}_{}.png", stem, label);
+      const auto png_path = output_dir / std::format("{}_{}.png", stem, label);
       std::println("Writing:  {}", png_path.string());
       write_png(img, size, png_path);
     }
@@ -307,7 +328,7 @@ int main(int argc, char **argv) {
     // ── WebP variants ─────────────────────────────────────────────────────
     static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
         kWebpSizes{{
-            {92,  "92x92"},
+            {92, "92x92"},
             {256, "256x256"},
             {512, "512x512"},
         }};
