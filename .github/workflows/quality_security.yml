@@ -34,7 +34,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev libcurl4-openssl-dev git
+          sudo apt-get install -y libmagick++-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev libcurl4-openssl-dev git
 
       - name: Build with CMake
         run: |
@@ -57,7 +57,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
+          sudo apt-get install -y libmagick++-dev libcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
 
       - name: Configure CMake (generate compile_commands.json)
         run: |
@@ -152,7 +152,7 @@ jobs:
       - name: Install Clang & Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang clang-tidy nlohmann-json3-dev \
+          sudo apt-get install -y libmagick++-devclang clang-tidy nlohmann-json3-dev \
             libcurl4-openssl-dev wget pipx cmake ninja-build build-essential \
             gcc-14 g++-14 libboost-dev libboost-system-dev libboost-date-time-dev \
             libboost-regex-dev libboost-test-dev libssl-dev libsqlite3-dev
@@ -232,7 +232,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
+          sudo apt-get install -y libmagick++-devlibcurl4-openssl-dev wget pipx cmake ninja-build build-essential gcc-14 g++-14 libssl-dev nlohmann-json3-dev
 
       - name: Configure CMake (export compile_commands)
         run: |
@@ -277,7 +277,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "Generating SPDX SBOM with version: $version"
-          
+
           reuse spdx -o "./sbom-output/spdx-${version}.spdx" || {
             echo "⚠️  SPDX generation failed (this may be OK if REUSE is not configured)"
             # Create minimal SPDX file as fallback
@@ -378,13 +378,13 @@ jobs:
           echo "=== Downloaded SBOM Files ==="
           ls -lah sbom-input/
           echo ""
-          
+
           version="${{ steps.version.outputs.version }}"
           if [ ! -f "sbom-input/cyclonedx-${version}.json" ]; then
             echo "⚠️  CycloneDX SBOM not found!"
             exit 1
           fi
-          
+
           echo "✅ CycloneDX SBOM found"
           echo "=== SBOM Content Preview ==="
           head -20 "sbom-input/cyclonedx-${version}.json"
@@ -402,7 +402,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "=== Scanning for CRITICAL CVEs (CVSS >= 9) ==="
-          
+
           cve-bin-tool --sbom cyclonedx \
             --sbom-file "sbom-input/cyclonedx-${version}.json" \
             --format json \
@@ -427,7 +427,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "=== Scanning for ALL CVEs ==="
-          
+
           cve-bin-tool --sbom cyclonedx \
             --sbom-file "sbom-input/cyclonedx-${version}.json" \
             --format json \
@@ -451,7 +451,7 @@ jobs:
       - name: Create CVE Summary Report
         run: |
           version="${{ steps.version.outputs.version }}"
-          
+
           echo "=== CVE SCAN SUMMARY ===" > cve-summary-${version}.txt
           echo "" >> cve-summary-${version}.txt
           echo "Scan Date: $(date)" >> cve-summary-${version}.txt
