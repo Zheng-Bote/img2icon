@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-03
+
+### Added
+
+- AVIF support: The tool now generates AVIF variants (92x92, 256x256, 512x512) by default.
+- `--avif-quality` option: Control AVIF output quality (default: 75).
+
 ## [1.0.0] - 2026-03-14
 
 ### Added

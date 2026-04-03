@@ -174,6 +174,18 @@ void write_webp(const Magick::Image &src, std::size_t size,
 }
 
 /**
+ * @brief Writes an AVIF image resized to exactly @p size × @p size.
+ * @param quality  AVIF quality 1–100 (75 is the requested default).
+ */
+void write_avif(const Magick::Image &src, std::size_t size,
+                const fs::path &dest, unsigned int quality = 75) {
+  Magick::Image img = fit_and_pad(src, size);
+  img.magick("AVIF");
+  img.quality(quality);
+  img.write(dest.string());
+}
+
+/**
  * @brief Writes an SVG that embeds the full-resolution image as a base64
  *        PNG data-URI.  This preserves every pixel without lossy re-encoding.
  */
@@ -229,6 +241,7 @@ int main(int argc, char **argv) {
   bool no_bg = false;
   double fuzz = 15.0;
   unsigned int webp_quality = 85;
+  unsigned int avif_quality = 75;
 
   app.add_option("-i,--input", input_path,
                  "Input image (*.jpg | *.jpeg | *.png)")
@@ -250,6 +263,10 @@ int main(int argc, char **argv) {
 
   app.add_option("--webp-quality", webp_quality,
                  "WebP output quality 1–100  [default: 85]")
+      ->check(CLI::Range(1u, 100u));
+
+  app.add_option("--avif-quality", avif_quality,
+                 "AVIF output quality 1–100  [default: 75]")
       ->check(CLI::Range(1u, 100u));
 
   app.add_flag_callback(
@@ -340,9 +357,25 @@ int main(int argc, char **argv) {
       write_webp(img, size, webp_path, webp_quality);
     }
 
-    std::println("\nDone — {} files written to: {}",
-                 2 + kPngSizes.size() + kWebpSizes.size(), // ico+svg+pngs+webps
-                 output_dir.string());
+    // ── AVIF variants ─────────────────────────────────────────────────────
+    static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
+        kAvifSizes{{
+            {92, "92x92"},
+            {256, "256x256"},
+            {512, "512x512"},
+        }};
+
+    for (auto [size, label] : kAvifSizes) {
+      const auto avif_path =
+          output_dir / std::format("{}_{}.avif", stem, label);
+      std::println("Writing:  {}", avif_path.string());
+      write_avif(img, size, avif_path, avif_quality);
+    }
+
+    std::println(
+        "\nDone — {} files written to: {}",
+        2 + kPngSizes.size() + kWebpSizes.size() + kAvifSizes.size(), // ico+svg+pngs+webps+avifs
+        output_dir.string());
 
   } catch (const Magick::Exception &e) {
     std::println(stderr, "ImageMagick error: {}", e.what());

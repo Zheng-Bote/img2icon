@@ -15,19 +15,20 @@
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 **Table of Contents**
 
-  - [Description](#description)
-  - [Prerequisites](#prerequisites)
-  - [Build](#build)
-    - [Option A — CMake (recommended)](#option-a--cmake-recommended)
-    - [Option B — Single-command (no CMake)](#option-b--single-command-no-cmake)
-  - [Usage](#usage)
-    - [Examples](#examples)
-  - [Background removal notes](#background-removal-notes)
-  - [SVG output](#svg-output)
+- [Description](#description)
+- [Prerequisites](#prerequisites)
+- [Build](#build)
+  - [Option A — CMake (recommended)](#option-a--cmake-recommended)
+  - [Option B — Single-command (no CMake)](#option-b--single-command-no-cmake)
+- [Usage](#usage)
+  - [Examples](#examples)
+- [Background removal notes](#background-removal-notes)
+- [SVG output](#svg-output)
 - [Authors and License](#authors-and-license)
-    - [Code Contributors](#code-contributors)
+  - [Code Contributors](#code-contributors)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -48,6 +49,9 @@ Converts a **JPG** or **PNG** into all common icon/logo formats in one step.
 | `logo_256x256.png`  | PNG — app icon, medium                            |
 | `logo_512x512.png`  | PNG — app icon, large                             |
 | `logo_512x512.webp` | WebP — app icon, large (default quality 85)       |
+| `logo_92x92.avif`   | AVIF — app icon, small (default quality 75)       |
+| `logo_256x256.avif` | AVIF — app icon, medium (default quality 75)      |
+| `logo_512x512.avif` | AVIF — app icon, large (default quality 75)       |
 | `logo.svg`          | SVG wrapper with embedded base64 PNG data-URI     |
 
 All PNG/ICO outputs are **center-padded** to exact square dimensions
@@ -103,6 +107,7 @@ Options:
       --no-bg           Remove background → transparent
       --fuzz     0-100  Tolerance for background removal     [default: 15]
   --webp-quality 0-100  WebP quality                         [default: 85]
+  --avif-quality 0-100  AVIF quality                         [default: 75]
   -h, --help            Show this help
 ```
 
