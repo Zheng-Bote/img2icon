@@ -26,7 +26,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev
+          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev libmagick++-dev
 
       - name: Build with CMake
         run: |
@@ -49,7 +49,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev
+          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev libmagick++-dev
 
       - name: Configure CMake (generate compile_commands.json)
         run: |
@@ -146,7 +146,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang clang-tidy \
             wget pipx cmake ninja-build build-essential \
-            gcc-14 g++-14 libexiv2-dev libavif-dev
+            gcc-14 g++-14 libexiv2-dev libavif-dev libmagick++-dev
 
       - name: Configure CMake (export compile_commands.json)
         run: |
@@ -223,7 +223,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev
+          sudo apt-get install -y wget pipx cmake ninja-build build-essential gcc-14 g++-14 libexiv2-dev libavif-dev libmagick++-dev
 
       - name: Configure CMake (export compile_commands)
         run: |
