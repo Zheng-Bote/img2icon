@@ -1,5 +1,5 @@
 /**
- * SPDX-FileComment: img2icon — Converts JPG/PNG to ICO, PNG variants and SVG.
+ * SPDX-FileComment: img2icon — Converts JPG/PNG/HEIC to ICO, PNG variants and SVG.
  * SPDX-FileType: SOURCE
  * SPDX-License-Identifier: MIT
  *
@@ -20,18 +20,21 @@
 #include <Magick++.h>
 
 #include <array>
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <optional>
 #include <print>
 #include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
-#include "include/rz_config.hpp"
+#include "rz_config.hpp"
 
 namespace fs = std::filesystem;
 
@@ -133,78 +136,61 @@ Magick::Image fit_and_pad(const Magick::Image &src, std::size_t size) {
 // ─────────────────────────────────────────────
 
 /**
- * @brief Writes a multi-resolution *.ico file.
- *        Standard sizes: 16, 32, 48, 64, 256 px.
+ * @brief Writes a multi-resolution *.ico file from pre-scaled frames.
  */
-void write_ico(const Magick::Image &src, const fs::path &dest) {
-  static constexpr std::array<std::size_t, 5> kIcoSizes{16, 32, 48, 64, 256};
-
-  std::vector<Magick::Image> frames;
-  frames.reserve(kIcoSizes.size());
-
-  for (const std::size_t sz : kIcoSizes) {
-    Magick::Image frame = fit_and_pad(src, sz);
-    frame.magick("ICO");
-    frames.push_back(std::move(frame));
+[[nodiscard]]
+std::expected<void, std::string> write_ico(std::vector<Magick::Image> frames, const fs::path &dest) {
+  try {
+    Magick::writeImages(frames.begin(), frames.end(), dest.string());
+    return {};
+  } catch (const std::exception &e) {
+    return std::unexpected(std::format("Failed to write ICO: {}", e.what()));
   }
-
-  Magick::writeImages(frames.begin(), frames.end(), dest.string());
 }
 
 /**
- * @brief Writes a PNG resized to exactly @p size × @p size.
+ * @brief Generalized writer for single-frame formats (PNG, WebP, AVIF).
  */
-void write_png(const Magick::Image &src, std::size_t size,
-               const fs::path &dest) {
-  Magick::Image img = fit_and_pad(src, size);
-  img.magick("PNG");
-  img.write(dest.string());
+[[nodiscard]]
+std::expected<void, std::string> write_image(Magick::Image img, std::string_view format,
+                                             const fs::path &dest,
+                                             std::optional<unsigned int> quality = std::nullopt) {
+  try {
+    img.magick(std::string(format));
+    if (quality) {
+      img.quality(*quality);
+    }
+    img.write(dest.string());
+    return {};
+  } catch (const std::exception &e) {
+    return std::unexpected(std::format("Failed to write {}: {}", format, e.what()));
+  }
 }
 
 /**
- * @brief Writes a WebP image resized to exactly @p size × @p size.
- * @param quality  WebP quality 1–100 (85 is a visually lossless default).
+ * @brief Writes an SVG that embeds the image as a base64 PNG data-URI.
+ *        Scales down if larger than 512x512 to save space.
  */
-void write_webp(const Magick::Image &src, std::size_t size,
-                const fs::path &dest, unsigned int quality = 85) {
-  Magick::Image img = fit_and_pad(src, size);
-  img.magick("WEBP");
-  img.quality(quality);
-  img.write(dest.string());
-}
+[[nodiscard]]
+std::expected<void, std::string> write_svg(Magick::Image src, const fs::path &dest) {
+  try {
+    // Optionally resize large images for SVG embedding to keep file size sane
+    if (src.columns() > 512 || src.rows() > 512) {
+      src = fit_and_pad(src, 512);
+    }
 
-/**
- * @brief Writes an AVIF image resized to exactly @p size × @p size.
- * @param quality  AVIF quality 1–100 (75 is the requested default).
- */
-void write_avif(const Magick::Image &src, std::size_t size,
-                const fs::path &dest, unsigned int quality = 75) {
-  Magick::Image img = fit_and_pad(src, size);
-  img.magick("AVIF");
-  img.quality(quality);
-  img.write(dest.string());
-}
+    src.magick("PNG");
+    Magick::Blob blob;
+    src.write(&blob);
 
-/**
- * @brief Writes an SVG that embeds the full-resolution image as a base64
- *        PNG data-URI.  This preserves every pixel without lossy re-encoding.
- */
-void write_svg(const Magick::Image &src, const fs::path &dest) {
-  // Export source as PNG blob
-  Magick::Image copy = src;
-  copy.magick("PNG");
-  Magick::Blob blob;
-  copy.write(&blob);
+    const auto *raw = static_cast<const std::uint8_t *>(blob.data());
+    const std::string b64 = base64_encode({raw, blob.length()});
 
-  const auto *raw = static_cast<const std::uint8_t *>(blob.data());
-  const std::string b64 = base64_encode({raw, blob.length()});
+    const std::size_t w = src.columns();
+    const std::size_t h = src.rows();
 
-  const std::size_t w = copy.columns();
-  const std::size_t h = copy.rows();
-
-  // Emit SVG with embedded raster; viewBox preserves intrinsic dimensions
-  const std::string svg = std::format(
-      R"(<?xml version="1.0" encoding="UTF-8"?>
+    const std::string svg = std::format(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      width="{0}" height="{1}"
@@ -216,14 +202,17 @@ void write_svg(const Magick::Image &src, const fs::path &dest) {
          xlink:href="data:image/png;base64,{2}"/>
 </svg>
 )",
-      w, h, b64);
+        w, h, b64);
 
-  std::ofstream out(dest);
-  if (!out) {
-    throw std::runtime_error(
-        std::format("Cannot open for writing: {}", dest.string()));
+    std::ofstream out(dest);
+    if (!out) {
+      return std::unexpected(std::format("Cannot open for writing: {}", dest.string()));
+    }
+    out << svg;
+    return {};
+  } catch (const std::exception &e) {
+    return std::unexpected(std::format("Failed to write SVG: {}", e.what()));
   }
-  out << svg;
 }
 
 // ─────────────────────────────────────────────
@@ -232,7 +221,7 @@ void write_svg(const Magick::Image &src, const fs::path &dest) {
 int main(int argc, char **argv) {
   Magick::InitializeMagick(*argv);
 
-  CLI::App app{"img2icon — Convert JPG/PNG to ICO, PNG variants, and SVG\n"
+  CLI::App app{"img2icon — Convert JPG/PNG/HEIC to ICO, PNG variants, and SVG\n"
                "Requires Magick++ (ImageMagick ≥ 7) to be installed."};
 
   fs::path input_path;
@@ -244,7 +233,7 @@ int main(int argc, char **argv) {
   unsigned int avif_quality = 75;
 
   app.add_option("-i,--input", input_path,
-                 "Input image (*.jpg | *.jpeg | *.png)")
+                 "Input image (*.jpg | *.jpeg | *.png | *.heic)")
       ->required()
       ->check(CLI::ExistingFile);
 
@@ -290,13 +279,13 @@ int main(int argc, char **argv) {
   CLI11_PARSE(app, argc, argv);
 
   // ── Validate extension ──────────────────────────────────────────────────
-  std::string ext = input_path.extension().string();
-  std::ranges::transform(ext, ext.begin(),
-                         [](unsigned char c) { return std::tolower(c); });
+  std::string ext = input_path.extension().string() |
+                    std::views::transform([](unsigned char c) { return std::tolower(c); }) |
+                    std::ranges::to<std::string>();
 
-  if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") {
+  if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".heic") {
     std::println(stderr,
-                 "Error: only *.jpg, *.jpeg and *.png inputs are supported.");
+                 "Error: only *.jpg, *.jpeg, *.png and *.heic inputs are supported.");
     return 1;
   }
 
@@ -318,63 +307,64 @@ int main(int argc, char **argv) {
       remove_background(img, fuzz);
     }
 
+    // ── Cache for resized images ──────────────────────────────────────────
+    std::unordered_map<std::size_t, Magick::Image> cache;
+    auto get_scaled = [&](std::size_t size) -> Magick::Image {
+      if (!cache.contains(size)) {
+        cache[size] = fit_and_pad(img, size);
+      }
+      return cache[size];
+    };
+
+    // Helper for checking std::expected
+    auto check_err = [](const std::expected<void, std::string>& res) {
+      if (!res.has_value()) {
+        std::println(stderr, "{}", res.error());
+      }
+    };
+
     // ── ICO (multi-resolution: 16, 32, 48, 64, 256 px) ───────────────────
     const auto ico_path = output_dir / (stem + ".ico");
     std::println("Writing:  {}", ico_path.string());
-    write_ico(img, ico_path);
+    std::vector<Magick::Image> ico_frames;
+    for (std::size_t sz : {16uz, 32uz, 48uz, 64uz, 256uz}) {
+      ico_frames.push_back(get_scaled(sz));
+    }
+    check_err(write_ico(ico_frames, ico_path));
+
+    // ── Target Sizes for PNG, WebP, AVIF ──────────────────────────────────
+    static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
+        kSizes{{{92, "92x92"}, {256, "256x256"}, {512, "512x512"}}};
 
     // ── PNG variants ──────────────────────────────────────────────────────
-    static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
-        kPngSizes{{
-            {92, "92x92"},
-            {256, "256x256"},
-            {512, "512x512"},
-        }};
-
-    for (auto [size, label] : kPngSizes) {
+    for (auto [size, label] : kSizes) {
       const auto png_path = output_dir / std::format("{}_{}.png", stem, label);
       std::println("Writing:  {}", png_path.string());
-      write_png(img, size, png_path);
+      check_err(write_image(get_scaled(size), "PNG", png_path));
     }
 
     // ── SVG (embedded base64 PNG data-URI) ────────────────────────────────
     const auto svg_path = output_dir / (stem + ".svg");
     std::println("Writing:  {}", svg_path.string());
-    write_svg(img, svg_path);
+    check_err(write_svg(img, svg_path));
 
     // ── WebP variants ─────────────────────────────────────────────────────
-    static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
-        kWebpSizes{{
-            {92, "92x92"},
-            {256, "256x256"},
-            {512, "512x512"},
-        }};
-
-    for (auto [size, label] : kWebpSizes) {
-      const auto webp_path =
-          output_dir / std::format("{}_{}.webp", stem, label);
+    for (auto [size, label] : kSizes) {
+      const auto webp_path = output_dir / std::format("{}_{}.webp", stem, label);
       std::println("Writing:  {}", webp_path.string());
-      write_webp(img, size, webp_path, webp_quality);
+      check_err(write_image(get_scaled(size), "WEBP", webp_path, webp_quality));
     }
 
     // ── AVIF variants ─────────────────────────────────────────────────────
-    static constexpr std::array<std::pair<std::size_t, std::string_view>, 3>
-        kAvifSizes{{
-            {92, "92x92"},
-            {256, "256x256"},
-            {512, "512x512"},
-        }};
-
-    for (auto [size, label] : kAvifSizes) {
-      const auto avif_path =
-          output_dir / std::format("{}_{}.avif", stem, label);
+    for (auto [size, label] : kSizes) {
+      const auto avif_path = output_dir / std::format("{}_{}.avif", stem, label);
       std::println("Writing:  {}", avif_path.string());
-      write_avif(img, size, avif_path, avif_quality);
+      check_err(write_image(get_scaled(size), "AVIF", avif_path, avif_quality));
     }
 
     std::println(
         "\nDone — {} files written to: {}",
-        2 + kPngSizes.size() + kWebpSizes.size() + kAvifSizes.size(), // ico+svg+pngs+webps+avifs
+        2 + kSizes.size() * 3, // ico+svg + 3*png + 3*webp + 3*avif
         output_dir.string());
 
   } catch (const Magick::Exception &e) {

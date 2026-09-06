@@ -1,7 +1,7 @@
 <div id="top" align="center">
 <h1>img2icon</h1>
 
-<p>Converts a JPG or PNG into all common icon/logo formats in one step.</p>
+<p>Converts a JPG, PNG, or HEIC into all common icon/logo formats in one step.</p>
 
 [Report Issue](https://github.com/Zheng-Bote/img2icony/issues) · [Request Feature](https://github.com/Zheng-Bote/img2icon/pulls)
 
@@ -39,7 +39,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.23+-blue.svg)]()
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey.svg)
 
-Converts a **JPG** or **PNG** into all common icon/logo formats in one step.
+Converts a **JPG**, **PNG**, or **HEIC** into all common icon/logo formats in one step.
 
 | Output              | Description                                       |
 | ------------------- | ------------------------------------------------- |
@@ -86,7 +86,7 @@ sudo cmake --install build
 c++ -std=c++23 \
     $(Magick++-config --cxxflags --libs) \
     -ICLI11/include \
-    img2icon.cpp -o img2icon
+    src/img2icon.cpp -o img2icon
 ```
 
 > Grab CLI11 header: `curl -Lo CLI11/include/CLI/CLI.hpp \`
@@ -100,7 +100,7 @@ c++ -std=c++23 \
 img2icon [OPTIONS]
 
 Options:
-  -i, --input    PATH   Input image *.jpg | *.jpeg | *.png   [required]
+  -i, --input    PATH   Input image *.jpg | *.jpeg | *.png | *.heic [required]
   -o, --output   DIR    Output directory (created if absent) [required]
   -n, --name     NAME   Base filename for outputs            [default: logo]
       --no-bg           Remove background → transparent

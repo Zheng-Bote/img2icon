@@ -14,14 +14,14 @@
 #include <string>
 
 static const std::string PROJECT_NAME = "img2icon";
-static const std::string PROG_LONGNAME = "Convert a JPG or PNG into all common icon/logo formats in one step.";
-static const std::string PROJECT_DESCRIPTION = "Convert a JPG or PNG into all common icon/logo formats in one step.";
+static const std::string PROG_LONGNAME = "Convert a JPG, PNG, or HEIC into all common icon/logo formats in one step.";
+static const std::string PROJECT_DESCRIPTION = "Convert a JPG, PNG, or HEIC into all common icon/logo formats in one step.";
 
 static const std::string PROJECT_EXECUTABLE = "img2icon";
 
-static const std::string PROJECT_VERSION = "1.1.0";
+static const std::string PROJECT_VERSION = "1.2.0";
 static const std::int32_t PROJECT_VERSION_MAJOR { 1 };
-static const std::int32_t PROJECT_VERSION_MINOR { 1 };
+static const std::int32_t PROJECT_VERSION_MINOR { 2 };
 static const std::int32_t PROJECT_VERSION_PATCH { 0 };
 
 static const std::string PROJECT_HOMEPAGE_URL = "https://github.com/Zheng-Bote/img2icon";

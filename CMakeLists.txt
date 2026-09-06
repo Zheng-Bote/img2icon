@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(img2icon
-  VERSION 1.1.0
-  DESCRIPTION "Convert a JPG or PNG into all common icon/logo formats in one step."
+  VERSION 1.2.0
+  DESCRIPTION "Convert a JPG, PNG, or HEIC into all common icon/logo formats in one step."
   HOMEPAGE_URL "https://github.com/Zheng-Bote/img2icon"
   LANGUAGES CXX
 )
@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --- Configure (für rz_config.hpp) ---
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
-set(PROG_LONGNAME "Convert a JPG or PNG into all common icon/logo formats in one step.")
+set(PROG_LONGNAME "Convert a JPG, PNG, or HEIC into all common icon/logo formats in one step.")
 set(PROG_CREATED "2026")
 set(PROG_AUTHOR "ZHENG Bote")
 set(PROG_ORGANIZATION_NAME "ZHENG Robert")
@@ -93,7 +93,8 @@ if(NOT CLI11_FOUND)
 endif()
 
 # ── Target ───────────────────────────────────────────────────────────────────
-add_executable(img2icon img2icon.cpp)
+add_executable(img2icon src/img2icon.cpp)
+target_include_directories(img2icon PRIVATE include)
 
 target_link_libraries(img2icon
   PRIVATE
